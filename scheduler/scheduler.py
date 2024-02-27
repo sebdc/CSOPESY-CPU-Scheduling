@@ -19,7 +19,7 @@ class CPUScheduler:
 
         try: 
             x, y, z, completionTime, processes = InputHandler.readProcessesFromFile(fileName)
-            
+
             if processes is not None:
                 self.algorithmId = x
                 self.numProcesses = y
@@ -39,41 +39,63 @@ class CPUScheduler:
     def startSimulation(self):
         if self.algorithmId == 0:
             self.fcfs()
-            pass 
         elif self.algorithmId == 1:
-            # SJF
-            pass
+            self.sjf()
         elif self.algorithmId == 2:
-            # SRTF
-            pass
+            self.srtf()
         elif self.algorithmId == 3:
-            # RR
-            pass
+            self.rr()
 
     '''
         - Since this is FCFS, sort process by arrivalTime
         - If the arrival time is the same, then use the one with the smaller processId
             a. Loop from currentTime (0) to completionTime (sum of all burst times)
             b. Since processes are sorted, just loop through it instead
-        - Keep track of current time
-        - Wait time = current time - arrival time
     '''
     def fcfs(self):
         # Sort process by arrival time and process id
         self.processes.sort(key=lambda x: (x.arrivalTime, x.processId))
 
+        # Keep track of time
         currentTime = 0
         totalWaitingTime = 0
-        for index, process in enumerate(self.processes):
-            currentTime = max(currentTime, process.arrivalTime)
-            process.startTime = currentTime
-            process.endTime = process.startTime + process.burstTime
-            process.waitingTime = process.startTime - process.arrivalTime
-            currentTime = process.endTime
 
-            totalWaitingTime += process.waitingTime
+        for index, p in enumerate(self.processes):
 
-            print( f'P[{index}] Start time: {process.startTime} | End time: {process.endTime} | Waiting time: {process.waitingTime}')
+            # Ensure that the currentTime is at least as late as the arrival time of the current process
+            currentTime = max(currentTime, p.arrivalTime)
+
+            # Set the start time of the current process to the current time.
+            # If the current time is later than the arrival time, this means the process has to wait.
+            # Otherwise, it starts immediately upon arrival.
+            p.startTime = currentTime
+
+            # Determine the end time of the current process by adding its burst time to its start time.
+            # This represents when the process completes its execution.
+            p.endTime = p.startTime + p.burstTime
+
+            # Calculate the waiting time of the current process.
+            # This is the duration the process spends waiting in the queue before it starts executing.
+            # It is computed as the difference between the start time and the arrival time.
+            p.waitingTime = p.startTime - p.arrivalTime
+
+            # Update the current time to the end time of the current process.
+            # This ensures that the next process starts after the current process finishes.
+            currentTime = p.endTime
+
+            # Accumulate the waiting times of all processes.
+            totalWaitingTime += p.waitingTime
+
+            print( f'P[{index}] Start time: {p.startTime} | End time: {p.endTime} | Waiting time: {p.waitingTime}')
 
         averageWaitingTime = totalWaitingTime / len(self.processes)
         print( 'Average waiting time: ', averageWaitingTime )
+
+    def sjf(self):
+        print( 'Not yet implemented' )
+    
+    def srtf(self):
+        print( 'Not yet implemented' )
+
+    def rr(self):
+        print( 'Not yet implemented' )
