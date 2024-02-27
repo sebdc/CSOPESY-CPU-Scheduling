@@ -19,12 +19,7 @@ class CPUScheduler:
 
         try: 
             x, y, z, completionTime, processes = InputHandler.readProcessesFromFile(fileName)
-            print("Algorithm ID:", x)
-            print("Num Processes:", y)
-            print("Time Quantum:", z)
-            print("Completion Time:", completionTime)
-            print("Processes:", processes)
-
+            
             if processes is not None:
                 self.algorithmId = x
                 self.numProcesses = y

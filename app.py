@@ -3,7 +3,7 @@ from scheduler.process import Process
 
 def main():
 
-    fileInputName = 'fcfs3.txt'
+    fileInputName = 'fcfs2.txt'
     scheduler = CPUScheduler()
     scheduler.readInputFile(fileInputName)
     scheduler.startSimulation()
