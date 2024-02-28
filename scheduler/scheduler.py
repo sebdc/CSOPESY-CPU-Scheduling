@@ -92,7 +92,43 @@ class CPUScheduler:
         print( 'Average waiting time: ', averageWaitingTime )
 
     def sjf(self):
-        print( 'Not yet implemented' )
+        # Sort process by arrival time and process id
+        self.processes.sort(key=lambda x: (x.arrivalTime, x.processId))
+
+        # Keeps track of time
+        currentTime = 0
+        totalWaitingTime = 0
+
+        # Stores final result here (sorted by which process ends first)
+        executedProcesses = []
+
+        while self.processes:
+            # Creates a queue of processes that fills up when a process has arrived
+            queue = []
+            for process in self.processes:
+                if process.arrivalTime <= currentTime:
+                    queue.append(process)
+
+            # When there is a process in the queue
+            if queue:
+                # Selects the process with the shortest burst time from the processes queue
+                nextProcess = min(queue, key=lambda x: x.burstTime)
+                self.processes.remove(nextProcess)
+
+                nextProcess.startTime = currentTime
+                nextProcess.endTime = currentTime + nextProcess.burstTime
+                nextProcess.waitingTime = currentTime - nextProcess.arrivalTime
+                totalWaitingTime += nextProcess.waitingTime
+                currentTime = nextProcess.endTime
+
+                executedProcesses.append(nextProcess)
+
+        for p in executedProcesses:
+            print(f'P[{p.processId}] Start time: {p.startTime} | End time: {p.endTime} | Waiting time: {p.waitingTime}')
+
+        averageWaitingTime = totalWaitingTime / len(executedProcesses)
+        print('Average waiting time: ', averageWaitingTime)
+
     
     def srtf(self):
         print( 'Not yet implemented' )
