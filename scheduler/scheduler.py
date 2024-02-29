@@ -16,7 +16,6 @@ class CPUScheduler:
     """
     def readInputFile(self, fileName: str):
         from .input_handler import InputHandler
-
         try: 
             x, y, z, completionTime, processes = InputHandler.readProcessesFromFile(fileName)
 
@@ -112,11 +111,11 @@ class CPUScheduler:
             # When there is a process in the queue
             if queue:
                 # Selects the process with the shortest burst time from the processes queue
-                nextProcess = min(queue, key=lambda x: x.timeQuantum)
+                nextProcess = min(queue, key=lambda x: x.burstTime)
                 self.processes.remove(nextProcess)
 
                 nextProcess.startTime = currentTime
-                nextProcess.endTime = currentTime + nextProcess.timeQuantum
+                nextProcess.endTime = currentTime + nextProcess.burstTime
                 nextProcess.waitingTime = currentTime - nextProcess.arrivalTime
                 totalWaitingTime += nextProcess.waitingTime
                 currentTime = nextProcess.endTime
