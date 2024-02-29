@@ -148,33 +148,48 @@ class CPUScheduler:
         # Sort processes by arrival time and process id
         self.processes.sort(key=lambda x: (x.arrivalTime, x.processId))
 
-        # Keeps track of time
-        currentTime = 0
-        totalWaitingTime = 0
-
         # Stores final result here (sorted by which process ends first)
         executedProcesses = []
 
-        while self.processes:
-            for process in self.processes:
-                if process.arrivalTime <= currentTime:
-                    if process.burstTime > 0:
-                        # Execute the process for the time quantum or its remaining burst time, whichever is smaller
-                        runTime = min(self.timeQuantum, process.burstTime)
-                        process.startTime = currentTime
-                        process.endTime = currentTime + runTime
-                        process.waitingTime = max(0, currentTime - process.arrivalTime)
-                        totalWaitingTime += process.waitingTime
-                        process.burstTime -= runTime
-                        currentTime += runTime
-                        executedProcesses.append(process)
-                        if process.burstTime == 0:
-                            self.processes.remove(process)
-                    else:
-                        self.processes.remove(process)
+        # Keep track of time
+        currentTime = 0
 
-        for p in executedProcesses:
-            print(f'P[{p.processId}] Start time: {p.startTime} | End time: {p.endTime} | Waiting time: {p.waitingTime}')
+        # Create the queue and initialize it
+        queue = []
+        while self.processes and self.processes[0].arrivalTime <= currentTime:
+            temp = self.processes.pop(0)
+            print( temp.processId )
+            queue.append(temp) 
 
-        averageWaitingTime = totalWaitingTime / len(executedProcesses)
-        print('Average waiting time: ', averageWaitingTime)
+        # Loop until self.process and queue is empty
+        while self.processes or queue:
+        
+            # Run the process at the head of the queue 
+            p = queue.pop(0)
+
+            # Ensure that the currentTime is at least as late as the arrival time of the current process
+            currentTime = max(currentTime, p.arrivalTime)
+
+            # Execute the process for the time quantum or its remaining burst time, whichever is smaller
+            runTime = min(self.timeQuantum, p.burstTime)
+
+            p.startTime = currentTime 
+            p.endTime = p.startTime + runTime 
+            p.burstTime -= runTime 
+            currentTime = p.endTime 
+
+            # Add to executed processes
+            executedProcess = Process() 
+            executedProcess.copyProcess(p)
+            executedProcesses.append(executedProcess)
+
+            # Add processes that just arrived to the queue 
+            while self.processes and self.processes[0].arrivalTime <= currentTime:
+                arrivedProcess = self.processes.pop(0)
+                queue.append(arrivedProcess) 
+
+            # If process has remaining burst time, add to the end of queue 
+            if p.burstTime > 0:
+                queue.append(p) 
+
+            print(f'P[{p.processId}] Start time: {p.startTime} | End time: {p.endTime} ')
