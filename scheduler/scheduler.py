@@ -112,11 +112,11 @@ class CPUScheduler:
             # When there is a process in the queue
             if queue:
                 # Selects the process with the shortest burst time from the processes queue
-                nextProcess = min(queue, key=lambda x: x.burstTime)
+                nextProcess = min(queue, key=lambda x: x.timeQuantum)
                 self.processes.remove(nextProcess)
 
                 nextProcess.startTime = currentTime
-                nextProcess.endTime = currentTime + nextProcess.burstTime
+                nextProcess.endTime = currentTime + nextProcess.timeQuantum
                 nextProcess.waitingTime = currentTime - nextProcess.arrivalTime
                 totalWaitingTime += nextProcess.waitingTime
                 currentTime = nextProcess.endTime
@@ -134,4 +134,37 @@ class CPUScheduler:
         print( 'Not yet implemented' )
 
     def rr(self):
-        print( 'Not yet implemented' )
+        # Sort processes by arrival time and process id
+        self.processes.sort(key=lambda x: (x.arrivalTime, x.processId))
+
+        # Keeps track of time
+        currentTime = 0
+        totalWaitingTime = 0
+
+        # Stores final result here (sorted by which process ends first)
+        executedProcesses = []
+
+        while self.processes:
+            for process in self.processes:
+                if process.arrivalTime <= currentTime:
+                    if process.burstTime > 0:
+                        # Execute the process for the time quantum or its remaining burst time, whichever is smaller
+                        runTime = min(self.timeQuantum, process.burstTime)
+                        process.startTime = currentTime
+                        process.endTime = currentTime + runTime
+                        process.waitingTime = max(0, currentTime - process.arrivalTime)
+                        totalWaitingTime += process.waitingTime
+                        process.burstTime -= runTime
+                        currentTime += runTime
+                        executedProcesses.append(process)
+                        if process.burstTime == 0:
+                            self.processes.remove(process)
+                    else:
+                        self.processes.remove(process)
+
+        for p in executedProcesses:
+            print(f'P[{p.processId}] Start time: {p.startTime} | End time: {p.endTime} | Waiting time: {p.waitingTime}')
+
+        averageWaitingTime = totalWaitingTime / len(executedProcesses)
+        print('Average waiting time: ', averageWaitingTime)
+        
