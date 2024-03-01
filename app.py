@@ -3,7 +3,7 @@ from scheduler.process import Process
 
 def main():
 
-    fileInputName = 'rr1.txt'
+    fileInputName = 'sjf3.txt'
     scheduler = CPUScheduler()
     scheduler.readInputFile(fileInputName)
     scheduler.startSimulation()
