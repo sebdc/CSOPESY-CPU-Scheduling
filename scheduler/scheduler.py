@@ -1,3 +1,4 @@
+import numpy as np
 from typing import List
 from .process import Process
 
@@ -65,22 +66,9 @@ class CPUScheduler:
             # Ensure that the currentTime is at least as late as the arrival time of the current process
             currentTime = max(currentTime, p.arrivalTime)
 
-            # Set the start time of the current process to the current time.
-            # If the current time is later than the arrival time, this means the process has to wait.
-            # Otherwise, it starts immediately upon arrival.
             p.startTime = currentTime
-
-            # Determine the end time of the current process by adding its burst time to its start time.
-            # This represents when the process completes its execution.
             p.endTime = p.startTime + p.burstTime
-
-            # Calculate the waiting time of the current process.
-            # This is the duration the process spends waiting in the queue before it starts executing.
-            # It is computed as the difference between the start time and the arrival time.
             p.waitingTime = p.startTime - p.arrivalTime
-
-            # Update the current time to the end time of the current process.
-            # This ensures that the next process starts after the current process finishes.
             currentTime = p.endTime
 
             # Accumulate the waiting times of all processes.
@@ -179,12 +167,14 @@ class CPUScheduler:
         averageWaitingTime = totalWaitingTime / len(executedProcesses)
         print('Average waiting time: ', averageWaitingTime)
 
+
     def rr(self):
         # Sort processes by arrival time and process id
         self.processes.sort(key=lambda x: (x.arrivalTime, x.processId))
 
         # Stores final result here (sorted by which process ends first)
         executedProcesses = []
+        waitingTimeIndex = []
 
         # Keep track of time
         currentTime = 0
@@ -201,6 +191,11 @@ class CPUScheduler:
             # Run the process at the head of the queue 
             p = queue.pop(0)
 
+            # Calculate initial waiting time 
+            if p.processId not in waitingTimeIndex:
+                p.waitingTime = currentTime - p.arrivalTime                
+                waitingTimeIndex.append(p.processId)
+
             # Ensure that the currentTime is at least as late as the arrival time of the current process
             currentTime = max(currentTime, p.arrivalTime)
 
@@ -212,18 +207,42 @@ class CPUScheduler:
             p.burstTime -= runTime 
             currentTime = p.endTime 
 
-            # Add to executed processes
-            executedProcess = Process() 
-            executedProcess.copyProcess(p)
-            executedProcesses.append(executedProcess)
-
             # Add processes that just arrived to the queue 
             while self.processes and self.processes[0].arrivalTime <= currentTime:
                 arrivedProcess = self.processes.pop(0)
                 queue.append(arrivedProcess) 
 
+            # Calculate waiting time of processes in queue
+            if p.processId in waitingTimeIndex:
+                for q in queue:
+                    q.waitingTime += runTime
+                
             # If process has remaining burst time, add to the end of queue 
             if p.burstTime > 0:
                 queue.append(p) 
 
-            print(f'P[{p.processId}] Start time: {p.startTime} | End time: {p.endTime} | Waiting Time: {p.waitingTime}' )
+            # Add to executed processes
+            executedProcess = Process() 
+            executedProcess.copyProcess(p)
+            executedProcesses.append(executedProcess)
+
+        for p in executedProcesses:
+            print(f'P[{p.processId}] Start time: {p.startTime} | End time: {p.endTime} | Waiting time: {p.waitingTime}')
+
+        # Sort executed processes by process id and waiting time
+        executedProcesses.sort(key=lambda x: (x.processId, x.waitingTime), reverse=True)
+        uniqueProcesses = []
+        seenIds = set()
+
+        # Find the final snapshot of each process to calculate average waiting time
+        for e in executedProcesses: 
+            if e.processId not in seenIds:
+                uniqueProcesses.append(e)
+                seenIds.add(e.processId)
+
+        totalWaitingTime = 0
+        for u in uniqueProcesses:
+            totalWaitingTime += u.waitingTime 
+
+        averageWaitingTime = totalWaitingTime / self.numProcesses
+        print('Average waiting time: ', averageWaitingTime)

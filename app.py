@@ -3,10 +3,10 @@ from scheduler.process import Process
 
 def main():
 
-    fileInputName = 'sjf3.txt'
+    fileInputName = 'rr2.txt'
     scheduler = CPUScheduler()
     scheduler.readInputFile(fileInputName)
     scheduler.startSimulation()
 
 if __name__ == "__main__":
-    main()
+    main()  
