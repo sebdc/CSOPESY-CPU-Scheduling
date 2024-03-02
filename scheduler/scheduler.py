@@ -1,4 +1,3 @@
-import numpy as np
 from typing import List
 from .process import Process
 
@@ -145,7 +144,7 @@ class CPUScheduler:
             temp = self.processes.pop(0)
             queue.append(temp) 
         
-         # Sort queue by burst time in ascending order
+        # Sort queue by burst time in ascending order
         queue.sort(key=lambda x: (x.burstTime, x.processId))
 
         # Loop until self.process and queue is empty
@@ -223,9 +222,10 @@ class CPUScheduler:
     def rr(self):
         # Sort processes by arrival time and process id
         self.processes.sort(key=lambda x: (x.arrivalTime, x.processId))
+        firstProcess = self.processes[0]
 
         # Keep track of time
-        currentTime = 0
+        currentTime = firstProcess.arrivalTime
 
         # Stores final result here (sorted by which process ends first)
         executedProcesses = []
@@ -298,3 +298,8 @@ class CPUScheduler:
 
         averageWaitingTime = totalWaitingTime / self.numProcesses
         print('Average waiting time: ', averageWaitingTime)
+
+    def initQueue(self, queue, currentTime):
+        while self.processes and self.processes[0].arrivalTime <= currentTime:
+            temp = self.processes.pop(0)
+            queue.append(temp) 

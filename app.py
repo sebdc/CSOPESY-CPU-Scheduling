@@ -1,10 +1,11 @@
 from scheduler.scheduler import CPUScheduler
-from scheduler.process import Process
+from scheduler.scheduler_new import CPUScheduler2
 
 def main():
 
-    fileInputName = 'srtf3.txt'
+    fileInputName = 'srtf4.txt'
     scheduler = CPUScheduler()
+    # scheduler = CPUScheduler2()
     scheduler.readInputFile(fileInputName)
     scheduler.startSimulation()
 
