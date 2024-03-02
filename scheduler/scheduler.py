@@ -151,10 +151,6 @@ class CPUScheduler:
         # Loop until self.process and queue is empty
         while self.processes or queue:
 
-            # Check when the next process will arrive
-            if self.processes:
-                nextArrivalTime = self.processes[0].arrivalTime if self.processes else -1
-
             # Run the process at the head of the queue 
             p = queue.pop(0)
 
@@ -165,14 +161,28 @@ class CPUScheduler:
 
             # Ensure that the currentTime is at least as late as the arrival time of the current process
             currentTime = max(currentTime, p.arrivalTime)
+            p.startTime = currentTime 
 
-            # Execute the process its remaining burst time or until the next process arrives
+            # Execute the process with its remaining burst time or until the next process arrives
             if self.processes:
-                runTime = min(p.burstTime, nextArrivalTime+1)
+                isPreEmptive = False
+
+                # Get all the processes that will arrive during the run time of current process
+                arrivingProcesses = [a for a in self.processes if a.arrivalTime <= currentTime + p.burstTime]
+
+                print( f"p = {p.processId} with BurstTime = {p.burstTime}")
+                for a in arrivingProcesses: 
+                    pNewBurstTime = p.burstTime - (a.arrivalTime - currentTime)
+                    if a.burstTime < pNewBurstTime:
+                        isPreEmptive = True
+                        runTime = a.arrivalTime - currentTime
+
+                if isPreEmptive == False:
+                    runTime = p.burstTime
+
             else:
                 runTime = p.burstTime
 
-            p.startTime = currentTime 
             p.endTime = p.startTime + runTime 
             p.burstTime -= runTime 
             currentTime = p.endTime 
