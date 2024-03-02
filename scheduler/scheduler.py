@@ -128,56 +128,108 @@ class CPUScheduler:
     def srtf(self):
         # Sort processes by arrival time and process id
         self.processes.sort(key=lambda x: (x.arrivalTime, x.processId))
+        firstProcess = self.processes[0]
 
         # Keeps track of time
-        currentTime = 0
+        currentTime = firstProcess.arrivalTime
         totalWaitingTime = 0
-
-        # Stores final result here (sorted by which process ends first)
-        executedProcesses = []
-
-        while self.processes:
-            # Creates a queue of processes that fills up when a process has arrived
-            queue = []
-            for process in self.processes:
-                if process.arrivalTime <= currentTime:
-                    queue.append(process)
-
-            # When there is a process in the queue
-            if queue:
-                # Selects the process with the shortest burst time from the processes queue
-                nextProcess = min(queue, key=lambda x: x.burstTime)
-
-                # Ensure the queue is sorted by burst time
-                queue.sort(key=lambda x: x.burstTime)
-
-                self.processes.remove(nextProcess)
-
-                nextProcess.startTime = currentTime
-                nextProcess.endTime = currentTime + nextProcess.burstTime
-                nextProcess.waitingTime = currentTime - nextProcess.arrivalTime
-                totalWaitingTime += nextProcess.waitingTime
-                currentTime = nextProcess.endTime
-
-                executedProcesses.append(nextProcess)
-
-        for p in executedProcesses:
-            print(f'P[{p.processId}] Start time: {p.startTime} | End time: {p.endTime} | Waiting time: {p.waitingTime}')
-
-        averageWaitingTime = totalWaitingTime / len(executedProcesses)
-        print('Average waiting time: ', averageWaitingTime)
-
-
-    def rr(self):
-        # Sort processes by arrival time and process id
-        self.processes.sort(key=lambda x: (x.arrivalTime, x.processId))
+        nextArrivalTime = -1
 
         # Stores final result here (sorted by which process ends first)
         executedProcesses = []
         waitingTimeIndex = []
 
+        # Create the queue and initialize it
+        queue = []
+        while self.processes and self.processes[0].arrivalTime <= currentTime:
+            temp = self.processes.pop(0)
+            queue.append(temp) 
+        
+         # Sort queue by burst time in ascending order
+        queue.sort(key=lambda x: (x.burstTime, x.processId))
+
+        # Loop until self.process and queue is empty
+        while self.processes or queue:
+
+            # Check when the next process will arrive
+            if self.processes:
+                nextArrivalTime = self.processes[0].arrivalTime if self.processes else -1
+
+            # Run the process at the head of the queue 
+            p = queue.pop(0)
+
+            # Calculate initial waiting time
+            if p.processId not in waitingTimeIndex:
+                p.waitingTime = currentTime - p.arrivalTime                
+                waitingTimeIndex.append(p.processId)
+
+            # Ensure that the currentTime is at least as late as the arrival time of the current process
+            currentTime = max(currentTime, p.arrivalTime)
+
+            # Execute the process its remaining burst time or until the next process arrives
+            if self.processes:
+                runTime = min(p.burstTime, nextArrivalTime+1)
+            else:
+                runTime = p.burstTime
+
+            p.startTime = currentTime 
+            p.endTime = p.startTime + runTime 
+            p.burstTime -= runTime 
+            currentTime = p.endTime 
+
+            # Add processes that just arrived to the queue 
+            while self.processes and self.processes[0].arrivalTime <= currentTime:
+                arrivedProcess = self.processes.pop(0)
+                queue.append(arrivedProcess) 
+
+            # Calculate waiting time of processes in queue
+            if p.processId in waitingTimeIndex:
+                for q in queue:
+                    q.waitingTime += runTime
+
+            # Sort queue by burst time in ascending order
+            queue.sort(key=lambda x: (x.burstTime, x.processId))
+
+            # Add process back to queue if it did not finish
+            if p.burstTime > 0: 
+                queue.append(p)
+
+            # Add to executed processes
+            executedProcess = Process() 
+            executedProcess.copyProcess(p)
+            executedProcesses.append(executedProcess)
+
+        for p in executedProcesses:
+            print(f'P[{p.processId}] Start time: {p.startTime} | End time: {p.endTime} | Waiting time: {p.waitingTime}')
+
+        # Sort executed processes by processId and waitingTime
+        executedProcesses.sort(key=lambda x: (x.processId, x.waitingTime), reverse=True)
+        uniqueProcesses = []
+        seenIds = set()
+
+        # Find the final snapshot of each process to calculate average waiting time
+        for e in executedProcesses: 
+            if e.processId not in seenIds:
+                uniqueProcesses.append(e)
+                seenIds.add(e.processId)
+
+        totalWaitingTime = 0
+        for u in uniqueProcesses:
+            totalWaitingTime += u.waitingTime 
+
+        averageWaitingTime = totalWaitingTime / self.numProcesses
+        print('Average waiting time: ', averageWaitingTime)
+
+    def rr(self):
+        # Sort processes by arrival time and process id
+        self.processes.sort(key=lambda x: (x.arrivalTime, x.processId))
+
         # Keep track of time
         currentTime = 0
+
+        # Stores final result here (sorted by which process ends first)
+        executedProcesses = []
+        waitingTimeIndex = []
 
         # Create the queue and initialize it
         queue = []
@@ -229,7 +281,7 @@ class CPUScheduler:
         for p in executedProcesses:
             print(f'P[{p.processId}] Start time: {p.startTime} | End time: {p.endTime} | Waiting time: {p.waitingTime}')
 
-        # Sort executed processes by process id and waiting time
+        # Sort executed processes by processId and waitingTime
         executedProcesses.sort(key=lambda x: (x.processId, x.waitingTime), reverse=True)
         uniqueProcesses = []
         seenIds = set()
